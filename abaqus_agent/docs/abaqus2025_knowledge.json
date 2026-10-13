@@ -1,0 +1,620 @@
+{
+  "schema_version": 1,
+  "release": "2025",
+  "python": "3.10",
+  "checked_on": "2026-10-09",
+  "coverage": "Curated common workflows, not a complete API whitelist. Missing entries do not prove an API is invalid.",
+  "entries": [
+    {
+      "id": "runtime",
+      "commands": [
+        "Abaqus2025"
+      ],
+      "aliases": [
+        "版本",
+        "python",
+        "2025",
+        "兼容"
+      ],
+      "summary": "Target Abaqus/CAE 2025 kernel with Python 3.10. The external Agent and CAE use separate Python environments.",
+      "code": "from abaqus import mdb, session\nfrom abaqusConstants import *",
+      "notes": [
+        "Use Python 3 syntax. Documentation checks do not mean every example has been executed locally."
+      ],
+      "sources": [
+        "https://docs.software.vt.edu/abaqusv2025/English/SIMACAECAERefMap/simacae-r-wn.htm"
+      ],
+      "validation": "docs_checked",
+      "blocked_calls": []
+    },
+    {
+      "id": "import_model",
+      "commands": [
+        "mdb.ModelFromInputFile"
+      ],
+      "aliases": [
+        "导入",
+        "inp",
+        "input deck",
+        "import",
+        "模型命名"
+      ],
+      "summary": "Import an entire input deck as a model. Use the exact model name explicitly requested by the user.",
+      "code": "m = mdb.ModelFromInputFile(name=target_name, inputFileName=inp_path)",
+      "notes": [
+        "Resolve an absolute input path through workspace discovery. Inspect name collisions; do not overwrite existing models. Verify imported mesh and material/section state."
+      ],
+      "sources": [
+        "https://docs.software.vt.edu/abaqusv2025/English/SIMACAEKERRefMap/simaker-c-modelpyc.htm"
+      ],
+      "validation": "native_2025_tested",
+      "blocked_calls": []
+    },
+    {
+      "id": "model_state",
+      "commands": [
+        "mdb.models",
+        "model.parts",
+        "model.materials",
+        "model.sections"
+      ],
+      "aliases": [
+        "状态",
+        "检查",
+        "模型列表",
+        "材料为空",
+        "截面为空",
+        "verify",
+        "inspect"
+      ],
+      "summary": "Inspect model repositories and distinguish geometry, mesh, and physical properties.",
+      "code": "print(list(mdb.models.keys()))\nprint(list(m.parts.keys()), list(m.materials.keys()), list(m.sections.keys()))\nfor p in m.parts.values():\n    print(p.name, len(p.cells), len(p.nodes), len(p.elements))",
+      "notes": [
+        "Zero cells with existing nodes/elements is consistent with an orphan mesh. Empty material/section repositories do not prove hidden property assignments. Check source keywords, import warnings, and sectionAssignments."
+      ],
+      "sources": [
+        "https://docs.software.vt.edu/abaqusv2025/English/SIMACAEKERRefMap/simaker-c-modelpyc.htm",
+        "https://docs.software.vt.edu/abaqusv2025/English/SIMACAEKERRefMap/simaker-c-partpyc.htm"
+      ],
+      "validation": "native_2025_tested",
+      "blocked_calls": []
+    },
+    {
+      "id": "delete_model",
+      "commands": [
+        "del mdb.models"
+      ],
+      "aliases": [
+        "删除",
+        "默认模型",
+        "Model-1",
+        "delete"
+      ],
+      "summary": "Delete only the inspected, user-authorized default model after import succeeds.",
+      "code": "if default_name != target_name and default_name in mdb.models:\n    del mdb.models[default_name]\nprint(list(mdb.models.keys()))",
+      "notes": [
+        "Do not assume an existing default model is empty. A later script failure does not roll back prior imports or deletions."
+      ],
+      "sources": [
+        "https://docs.software.vt.edu/abaqusv2025/English/SIMACAEKERRefMap/simaker-c-modelpyc.htm"
+      ],
+      "validation": "native_2025_tested",
+      "blocked_calls": []
+    },
+    {
+      "id": "display",
+      "commands": [
+        "Viewport.setValues",
+        "session.currentViewportName"
+      ],
+      "aliases": [
+        "视口",
+        "显示",
+        "display",
+        "viewport",
+        "装配"
+      ],
+      "summary": "Display an existing part or assembly in the current viewport.",
+      "code": "vp = session.viewports[session.currentViewportName]\nvp.setValues(displayedObject=m.rootAssembly)\nvp.view.fitView()",
+      "notes": [
+        "displayedObject may also be a Part. Avoid hard-coded viewport names. Normal refresh occurs after a finite script returns."
+      ],
+      "sources": [
+        "https://docs.software.vt.edu/abaqusv2025/English/SIMACAEKERRefMap/simaker-c-viewportpyc.htm",
+        "https://docs.software.vt.edu/abaqusv2025/English/SIMACAEKERRefMap/simaker-c-sessionpyc.htm",
+        "https://docs.software.vt.edu/abaqusv2025/English/SIMACAEKERRefMap/simaker-c-viewpyc.htm"
+      ],
+      "validation": "native_2025_tested",
+      "blocked_calls": []
+    },
+    {
+      "id": "refresh",
+      "commands": [
+        "Viewport.forceRefresh",
+        "Viewport.bringToFront"
+      ],
+      "aliases": [
+        "刷新",
+        "processUpdates",
+        "session.processUpdates",
+        "forceRefresh",
+        "更新界面",
+        "refresh"
+      ],
+      "summary": "Abaqus 2025 has no session.processUpdates(). Use Viewport.forceRefresh() only when an immediate in-script refresh is needed.",
+      "code": "vp = session.viewports[session.currentViewportName]\nvp.forceRefresh()",
+      "notes": [
+        "Usually return from the task to refresh. bringToFront() belongs to Viewport, not Session. Do not substitute GUI-process APIs for kernel APIs."
+      ],
+      "sources": [
+        "https://docs.software.vt.edu/abaqusv2025/English/SIMACAEKERRefMap/simaker-c-sessionpyc.htm",
+        "https://docs.software.vt.edu/abaqusv2025/English/SIMACAEKERRefMap/simaker-c-viewportpyc.htm"
+      ],
+      "validation": "docs_checked",
+      "blocked_calls": [
+        {
+          "call": "session.processUpdates",
+          "reason": "Abaqus 2025 Session has no such method. Remove it, or call forceRefresh() on the current Viewport."
+        }
+      ]
+    },
+    {
+      "id": "fit_view",
+      "commands": [
+        "View.fitView"
+      ],
+      "aliases": [
+        "fitView",
+        "缩放",
+        "适应窗口",
+        "居中",
+        "相机",
+        "zoom"
+      ],
+      "summary": "fitView belongs to a viewport's view object.",
+      "code": "vp = session.viewports[session.currentViewportName]\nvp.view.fitView(drawImmediately=True)",
+      "notes": [
+        "drawImmediately is optional. Do not call session.fitView()."
+      ],
+      "sources": [
+        "https://docs.software.vt.edu/abaqusv2025/English/SIMACAEKERRefMap/simaker-c-viewpyc.htm"
+      ],
+      "validation": "docs_checked",
+      "blocked_calls": []
+    },
+    {
+      "id": "open_save",
+      "commands": [
+        "openMdb",
+        "mdb.saveAs",
+        "mdb.save"
+      ],
+      "aliases": [
+        "保存",
+        "打开cae",
+        "openMdb",
+        "saveAs",
+        "模型文件"
+      ],
+      "summary": "openMdb is a function exported by abaqus; save/saveAs are mdb methods.",
+      "code": "from abaqus import openMdb\n# Call only when opening this file is requested:\n# mdb = openMdb(pathName=cae_path)\nmdb.saveAs(pathName=save_path)",
+      "notes": [
+        "Opening a CAE file switches the model database. Handle unsaved work first. Do not call mdb.openMdb()."
+      ],
+      "sources": [
+        "https://docs.software.vt.edu/abaqusv2025/English/SIMACAEKERRefMap/simaker-c-mdbpyc.htm"
+      ],
+      "validation": "docs_checked",
+      "blocked_calls": [
+        {
+          "call": "mdb.openMdb",
+          "reason": "Use from abaqus import openMdb; mdb = openMdb(pathName=...), rather than mdb.openMdb."
+        }
+      ]
+    },
+    {
+      "id": "sketch",
+      "commands": [
+        "model.ConstrainedSketch",
+        "sketch.rectangle"
+      ],
+      "aliases": [
+        "草图",
+        "矩形",
+        "ConstrainedSketch",
+        "rectangle"
+      ],
+      "summary": "Create a sketch and rectangle using dimensions and units from the requested objective.",
+      "code": "s = m.ConstrainedSketch(name=sketch_name, sheetSize=sheet_size)\ns.rectangle(point1=(0.0, 0.0), point2=(width, height))",
+      "notes": [
+        "All example variables must be defined in the task. Placeholders are not default physical dimensions."
+      ],
+      "sources": [
+        "https://docs.software.vt.edu/abaqusv2025/English/SIMACAEKERRefMap/simaker-c-constrainedsketchpyc.htm"
+      ],
+      "validation": "docs_checked",
+      "blocked_calls": []
+    },
+    {
+      "id": "extrude",
+      "commands": [
+        "model.Part",
+        "part.BaseSolidExtrude"
+      ],
+      "aliases": [
+        "拉伸",
+        "实体",
+        "BaseSolidExtrude",
+        "几何建模"
+      ],
+      "summary": "Create a three-dimensional deformable part and extrude an existing closed sketch.",
+      "code": "p = m.Part(name=part_name, dimensionality=THREE_D, type=DEFORMABLE_BODY)\np.BaseSolidExtrude(sketch=s, depth=depth)",
+      "notes": [
+        "The sketch must be usable and closed. Do not apply geometry cells/edges workflows directly to an orphan mesh."
+      ],
+      "sources": [
+        "https://docs.software.vt.edu/abaqusv2025/English/SIMACAEKERRefMap/simaker-c-partpyc.htm",
+        "https://docs.software.vt.edu/abaqusv2025/English/SIMACAEKERRefMap/simaker-c-featurepyc.htm"
+      ],
+      "validation": "docs_checked",
+      "blocked_calls": []
+    },
+    {
+      "id": "material",
+      "commands": [
+        "model.Material"
+      ],
+      "aliases": [
+        "材料",
+        "Material",
+        "物性"
+      ],
+      "summary": "Create a model-level material container with properties chosen from the physical requirements.",
+      "code": "mat = m.Material(name=material_name)",
+      "notes": [
+        "Use a consistent unit system across geometry, stiffness, density, and loads. An empty material container is not a complete constitutive model."
+      ],
+      "sources": [
+        "https://docs.software.vt.edu/abaqusv2025/English/SIMACAEKERRefMap/simaker-c-materialpyc.htm"
+      ],
+      "validation": "docs_checked",
+      "blocked_calls": []
+    },
+    {
+      "id": "elastic",
+      "commands": [
+        "material.Elastic"
+      ],
+      "aliases": [
+        "弹性",
+        "Elastic",
+        "杨氏模量",
+        "泊松比"
+      ],
+      "summary": "An isotropic elastic table row contains Young's modulus and Poisson's ratio.",
+      "code": "mat.Elastic(table=((youngs_modulus, poisson_ratio),))",
+      "notes": [
+        "Do not infer material parameters or units from geometry."
+      ],
+      "sources": [
+        "https://docs.software.vt.edu/abaqusv2025/English/SIMACAEKERRefMap/simaker-c-elasticpyc.htm"
+      ],
+      "validation": "docs_checked",
+      "blocked_calls": []
+    },
+    {
+      "id": "density",
+      "commands": [
+        "material.Density"
+      ],
+      "aliases": [
+        "密度",
+        "Density",
+        "质量"
+      ],
+      "summary": "Density uses a table with nested row tuples.",
+      "code": "mat.Density(table=((mass_density,),))",
+      "notes": [
+        "Mass, length, and time units must be mutually consistent."
+      ],
+      "sources": [
+        "https://docs.software.vt.edu/abaqusv2025/English/SIMACAEKERRefMap/simaker-c-densitypyc.htm"
+      ],
+      "validation": "docs_checked",
+      "blocked_calls": []
+    },
+    {
+      "id": "solid_section",
+      "commands": [
+        "model.HomogeneousSolidSection"
+      ],
+      "aliases": [
+        "截面",
+        "HomogeneousSolidSection",
+        "实体截面"
+      ],
+      "summary": "Create a homogeneous solid section referring to an existing material.",
+      "code": "m.HomogeneousSolidSection(name=section_name, material=material_name, thickness=None)",
+      "notes": [
+        "Creating a section and assigning it are separate operations."
+      ],
+      "sources": [
+        "https://docs.software.vt.edu/abaqusv2025/English/SIMACAEKERRefMap/simaker-c-homogeneoussolidsectionpyc.htm"
+      ],
+      "validation": "docs_checked",
+      "blocked_calls": []
+    },
+    {
+      "id": "section_assignment",
+      "commands": [
+        "part.SectionAssignment",
+        "part.Set"
+      ],
+      "aliases": [
+        "SectionAssignment",
+        "截面分配",
+        "孤立网格",
+        "orphan mesh",
+        "elements",
+        "cells"
+      ],
+      "summary": "Create a region appropriate to the entity type, then assign a section. Orphan solid meshes use element regions.",
+      "code": "if len(p.cells):\n    region = p.Set(name=set_name, cells=p.cells)\nelif len(p.elements):\n    region = p.Set(name=set_name, elements=p.elements)\nelse:\n    raise ValueError('No solid cells or elements found')\np.SectionAssignment(region=region, sectionName=section_name)",
+      "notes": [
+        "This example targets solids. Identify shells, beams, and mixed elements before selecting regions/sections. Inspect sectionAssignments to confirm assignment."
+      ],
+      "sources": [
+        "https://docs.software.vt.edu/abaqusv2025/English/SIMACAEKERRefMap/simaker-c-sectionassignmentpyc.htm",
+        "https://docs.software.vt.edu/abaqusv2025/English/SIMACAEKERRefMap/simaker-c-partpyc.htm"
+      ],
+      "validation": "docs_checked",
+      "blocked_calls": []
+    },
+    {
+      "id": "assembly",
+      "commands": [
+        "assembly.Instance",
+        "assembly.regenerate"
+      ],
+      "aliases": [
+        "装配",
+        "实例",
+        "Instance",
+        "regenerate"
+      ],
+      "summary": "Create a dependent instance and regenerate the assembly.",
+      "code": "a = m.rootAssembly\ninst = a.Instance(name=instance_name, part=p, dependent=ON)\na.regenerate()",
+      "notes": [
+        "Inspect existing instance names and dependency before creating duplicates."
+      ],
+      "sources": [
+        "https://docs.software.vt.edu/abaqusv2025/English/SIMACAEKERRefMap/simaker-c-assemblypyc.htm"
+      ],
+      "validation": "docs_checked",
+      "blocked_calls": []
+    },
+    {
+      "id": "mesh",
+      "commands": [
+        "part.seedPart",
+        "part.generateMesh",
+        "part.setMeshControls",
+        "part.setElementType"
+      ],
+      "aliases": [
+        "网格",
+        "划分",
+        "seedPart",
+        "generateMesh",
+        "mesh"
+      ],
+      "summary": "Seed and mesh a geometric Part using its meshing methods.",
+      "code": "p.seedPart(size=mesh_size, deviationFactor=0.1, minSizeFactor=0.1)\np.generateMesh()",
+      "notes": [
+        "Choose element type and meshing technique for the geometry; do not apply SWEEP universally. Existing orphan meshes do not need seedPart/generateMesh."
+      ],
+      "sources": [
+        "https://docs.software.vt.edu/abaqusv2025/English/SIMACAEKERRefMap/simaker-c-partmgnpyc.htm"
+      ],
+      "validation": "docs_checked",
+      "blocked_calls": []
+    },
+    {
+      "id": "orphan_mesh",
+      "commands": [
+        "part.nodes",
+        "part.elements",
+        "part.cells"
+      ],
+      "aliases": [
+        "orphan",
+        "孤立",
+        "网格型inp",
+        "节点",
+        "单元",
+        "INP"
+      ],
+      "summary": "An input deck can produce an orphan mesh. Nodes/elements alone do not establish physical properties.",
+      "code": "print(len(p.cells), len(p.nodes), len(p.elements))\nprint(list(m.materials.keys()), list(m.sections.keys()))\nprint(len(p.sectionAssignments))",
+      "notes": [
+        "Whole-model import differs from File > Import Part. Check whether source *MATERIAL, *SOLID SECTION, *SHELL SECTION, and *STEP keywords exist."
+      ],
+      "sources": [
+        "https://docs.software.vt.edu/abaqusv2025/English/SIMACAEKERRefMap/simaker-c-modelpyc.htm",
+        "https://docs.software.vt.edu/abaqusv2025/English/SIMACAECAERefMap/simacae-c-edtconceditdifference.htm"
+      ],
+      "validation": "docs_checked",
+      "blocked_calls": []
+    },
+    {
+      "id": "static_step",
+      "commands": [
+        "model.StaticStep"
+      ],
+      "aliases": [
+        "分析步",
+        "静力",
+        "StaticStep",
+        "非线性"
+      ],
+      "summary": "Create a static step whose previous argument references an existing step.",
+      "code": "m.StaticStep(name=step_name, previous='Initial', timePeriod=time_period, nlgeom=OFF)",
+      "notes": [
+        "Large-deformation settings follow the physical objective. Materials, sections, loads, and constraints require separate verification."
+      ],
+      "sources": [
+        "https://docs.software.vt.edu/abaqusv2025/English/SIMACAEKERRefMap/simaker-c-staticsteppyc.htm"
+      ],
+      "validation": "docs_checked",
+      "blocked_calls": []
+    },
+    {
+      "id": "pressure",
+      "commands": [
+        "model.Pressure"
+      ],
+      "aliases": [
+        "压力",
+        "Pressure",
+        "载荷",
+        "surface"
+      ],
+      "summary": "Pressure requires a Surface region, rather than an ordinary node set.",
+      "code": "m.Pressure(name=load_name, createStepName=step_name, region=surface_region, magnitude=pressure_value)",
+      "notes": [
+        "Check surface normals, units, load direction, and analysis step."
+      ],
+      "sources": [
+        "https://docs.software.vt.edu/abaqusv2025/English/SIMACAEKERRefMap/simaker-c-pressurepyc.htm"
+      ],
+      "validation": "docs_checked",
+      "blocked_calls": []
+    },
+    {
+      "id": "job_create",
+      "commands": [
+        "mdb.Job"
+      ],
+      "aliases": [
+        "作业",
+        "Job",
+        "创建任务",
+        "求解"
+      ],
+      "summary": "Create an analysis job for an existing model.",
+      "code": "analysis_job = mdb.Job(name=job_name, model=model_name, numCpus=num_cpus)",
+      "notes": [
+        "Check materials, section assignments, steps, constraints, and loads first. Successful mesh import does not establish solver readiness. Use locally appropriate parallel settings."
+      ],
+      "sources": [
+        "https://docs.software.vt.edu/abaqusv2025/English/SIMACAEKERRefMap/simaker-c-modeljobpyc.htm"
+      ],
+      "validation": "docs_checked",
+      "blocked_calls": []
+    },
+    {
+      "id": "job_submit",
+      "commands": [
+        "job.submit",
+        "job.status",
+        "job.waitForCompletion"
+      ],
+      "aliases": [
+        "submit",
+        "waitForCompletion",
+        "提交",
+        "进度",
+        "完成",
+        "阻塞"
+      ],
+      "summary": "Submit the analysis and return from the interactive task; query progress in later finite tasks.",
+      "code": "analysis_job.submit(consistencyChecking=ON)\nprint(str(analysis_job.status))",
+      "notes": [
+        "waitForCompletion is an official API but blocks the script and is prohibited in this project's interactive tasks. Keep consistency checking enabled. Corroborate COMPLETED with solver output; NONE is not success."
+      ],
+      "sources": [
+        "https://docs.software.vt.edu/abaqusv2025/English/SIMACAEKERRefMap/simaker-c-jobpyc.htm"
+      ],
+      "validation": "docs_checked",
+      "blocked_calls": [
+        {
+          "call": "job.waitForCompletion",
+          "reason": "This API is valid but blocks the interactive kernel. Submit and return, then query job status in separate tasks.",
+          "kind": "interactive_policy"
+        }
+      ]
+    },
+    {
+      "id": "odb_open",
+      "commands": [
+        "odbAccess.openOdb",
+        "odb.close"
+      ],
+      "aliases": [
+        "odb",
+        "后处理",
+        "openOdb",
+        "结果文件"
+      ],
+      "summary": "Open an ODB read-only using odbAccess, then select an existing step/frame.",
+      "code": "from odbAccess import openOdb\nodb = openOdb(path=odb_path, readOnly=True)\nprint(list(odb.steps.keys()))",
+      "notes": [
+        "An incomplete or actively written ODB is not a final result. Close it after reading."
+      ],
+      "sources": [
+        "https://docs.software.vt.edu/abaqusv2025/English/SIMACAEKERRefMap/simaker-c-odbopenodbcommandpyc.htm"
+      ],
+      "validation": "docs_checked",
+      "blocked_calls": []
+    },
+    {
+      "id": "field_output",
+      "commands": [
+        "FieldOutput.getSubset",
+        "frame.fieldOutputs"
+      ],
+      "aliases": [
+        "应力",
+        "位移",
+        "反力",
+        "fieldOutputs",
+        "getSubset",
+        "后处理"
+      ],
+      "summary": "Inspect available field names in the selected step/frame before reading results.",
+      "code": "frame = odb.steps[step_name].frames[frame_index]\nprint(list(frame.fieldOutputs.keys()))\nfield = frame.fieldOutputs[field_name]\nsubset = field.getSubset(region=odb_region)",
+      "notes": [
+        "Availability depends on output requests. Report units, frame, region, and output position. Missing data is not zero."
+      ],
+      "sources": [
+        "https://docs.software.vt.edu/abaqusv2025/English/SIMACAEKERRefMap/simaker-c-fieldoutputpyc.htm"
+      ],
+      "validation": "docs_checked",
+      "blocked_calls": []
+    },
+    {
+      "id": "kernel_gui",
+      "commands": [
+        "abaqusGui"
+      ],
+      "aliases": [
+        "GUI",
+        "sendCommand",
+        "消息泵",
+        "forceRefresh",
+        "processUpdates"
+      ],
+      "summary": "Execution-tool scripts run in the kernel process; abaqusGui belongs to the GUI process.",
+      "code": "vp = session.viewports[session.currentViewportName]\nvp.forceRefresh()",
+      "notes": [
+        "Do not import abaqusGui inside kernel tasks, create background model-access threads, or run persistent event pumps. The GUI plugin handles native events and sendCommand."
+      ],
+      "sources": [
+        "https://docs.software.vt.edu/abaqusv2025/English/SIMACAECUSRefMap/simacus-c-comcommandskernelandgui.htm",
+        "https://docs.software.vt.edu/abaqusv2025/English/SIMACAECUSRefMap/simacus-c-comcommandsexecute.htm"
+      ],
+      "validation": "docs_checked",
+      "blocked_calls": []
+    }
+  ]
+}
